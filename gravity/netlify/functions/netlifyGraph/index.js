@@ -1,8 +1,10 @@
 // GENERATED VIA NETLIFY AUTOMATED DEV TOOLS, EDIT WITH CAUTION!
-const https = require("https")
-const crypto = require("crypto")
+import buffer from 'buffer'
+import crypto from 'crypto'
+import https from 'https'
+import process from 'process'
 
-exports.verifySignature = (input) => {
+export const verifySignature = (input) => {
   const secret = input.secret
   const body = input.body
   const signature = input.signature
@@ -14,8 +16,8 @@ exports.verifySignature = (input) => {
 
   const sig = {}
   for (const pair of signature.split(',')) {
-    const [k, v] = pair.split('=')
-    sig[k] = v
+    const [key, value] = pair.split('=')
+    sig[key] = value
   }
 
   if (!sig.t || !sig.hmac_sha256) {
@@ -48,7 +50,19 @@ exports.verifySignature = (input) => {
   return true
 }
 
-const operationsDoc = `
+const operationsDoc = `mutation Commit($contents: GitHubBase64String = "", $message: GitHubCommitMessage = {}, $fileChanges: GitHubFileChanges = {additions: {}}, $branch: GitHubCommittableBranch = {}, $expectedHeadOid: GitHubGitObjectID = "") @netlify(id: """838284ee-3ace-425a-8158-520c91ba9cff""", doc: """An empty mutation to start from""") {
+  gitHub {
+    createCommitOnBranch(
+      input: {message: $message, fileChanges: $fileChanges, branch: $branch, expectedHeadOid: $expectedHeadOid}
+    ) {
+      clientMutationId
+    }
+  }
+}
+
+query ExampleQuery @netlify(id: """df4c8cc1-2f1e-4d69-89c6-d695f77d45fd""", doc: """An example query to start with.""") {
+  __typename
+}
 
 query GetIssueBreakdown($after: String) @netlify(id: """c67c5c11-cbc4-48ed-8ac8-2803a4e4dc5f""", doc: """Issue that allows querying GitHub for more information about issues.""") {
   gitHub {
@@ -90,10 +104,7 @@ query GetIssueBreakdown($after: String) @netlify(id: """c67c5c11-cbc4-48ed-8ac8-
     }
   }
 }
-
-query ExampleQuery @netlify(id: """df4c8cc1-2f1e-4d69-89c6-d695f77d45fd""", doc: """An example query to start with.""") {
-  __typename
-}`
+`
 
 const httpFetch = (siteId, options) => {
   const reqBody = options.body || null
@@ -104,43 +115,43 @@ const httpFetch = (siteId, options) => {
     'Content-Length': reqBody.length,
   }
 
+  const timeoutMs = 30_000
+
   const reqOptions = {
     method: 'POST',
-    headers,
-    timeout: 30000,
+    headers: headers,
+    timeout: timeoutMs,
   }
 
   const url = 'https://serve.onegraph.com/graphql?app_id=' + siteId
 
   const respBody = []
 
-  console.log("Call to:", url, "with:", reqOptions)
-
   return new Promise((resolve, reject) => {
     const req = https.request(url, reqOptions, (res) => {
-      if (res.statusCoce && (res.statusCode < 200 || res.statusCode > 299)) {
+      if (res.statusCode && (res.statusCode < 200 || res.statusCode > 299)) {
         return reject(
           new Error(
-            "Netlify OneGraph return non - OK HTTP status code" + res.statusCode,
-          ),
+            'Netlify Graph return non-OK HTTP status code' + res.statusCode
+          )
         )
       }
 
       res.on('data', (chunk) => respBody.push(chunk))
 
       res.on('end', () => {
-        const resString = Buffer.concat(respBody).toString()
+        const resString = buffer.Buffer.concat(respBody).toString()
         resolve(resString)
       })
     })
 
-    req.on('error', (e) => {
-      console.error('Error making request to Netlify OneGraph: ', e)
+    req.on('error', (error) => {
+      console.error('Error making request to Netlify Graph:', error)
     })
 
     req.on('timeout', () => {
       req.destroy()
-      reject(new Error('Request to Netlify OneGraph timed out'))
+      reject(new Error('Request to Netlify Graph timed out'))
     })
 
     req.write(reqBody)
@@ -148,41 +159,36 @@ const httpFetch = (siteId, options) => {
   })
 }
 
-
-
-const fetchOneGraph = async function fetchOneGraph(input) {
+const fetchNetlifyGraph = async function fetchNetlifyGraph(input) {
   const query = input.query
   const operationName = input.operationName
   const variables = input.variables
+
   const options = input.options || {}
   const accessToken = options.accessToken
-
   const siteId = options.siteId || process.env.SITE_ID
 
   const payload = {
-    query,
-    variables,
-    operationName,
+    query: query,
+    variables: variables,
+    operationName: operationName,
   }
 
-  const result = await httpFetch(
-    siteId,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: accessToken ? "Bearer " + accessToken : '',
-      },
-      body: JSON.stringify(payload),
+  const result = await httpFetch(siteId, {
+    method: 'POST',
+    headers: {
+      Authorization: accessToken ? 'Bearer ' + accessToken : '',
     },
-  )
+    body: JSON.stringify(payload),
+  })
 
   return JSON.parse(result)
 }
 
-
-exports.verifyRequestSignature = (request) => {
+export const verifyRequestSignature = (request, options) => {
   const event = request.event
-  const secret = process.env.NETLIFY_GRAPH_WEBHOOK_SECRET
+  const secret =
+    options.webhookSecret || process.env.NETLIFY_GRAPH_WEBHOOK_SECRET
   const signature = event.headers['x-netlify-graph-signature']
   const body = event.body
 
@@ -196,49 +202,54 @@ exports.verifyRequestSignature = (request) => {
   return verifySignature({ secret, signature, body: body || '' })
 }
 
-exports.fetchGetIssueBreakdown = (
-  variables,
-  options
-) => {
-  return fetchOneGraph({
+export const executeCommit = (variables, options) => {
+  return fetchNetlifyGraph({
     query: operationsDoc,
-    operationName: "GetIssueBreakdown",
-    variables,
+    operationName: 'Commit',
+    variables: variables,
     options: options || {},
-  });
+  })
 }
 
-
-exports.fetchExampleQuery = (
-  variables,
-  options
-) => {
-  return fetchOneGraph({
+export const fetchExampleQuery = (variables, options) => {
+  return fetchNetlifyGraph({
     query: operationsDoc,
-    operationName: "ExampleQuery",
-    variables,
+    operationName: 'ExampleQuery',
+    variables: variables,
     options: options || {},
-  });
+  })
 }
 
+export const fetchGetIssueBreakdown = (variables, options) => {
+  return fetchNetlifyGraph({
+    query: operationsDoc,
+    operationName: 'GetIssueBreakdown',
+    variables: variables,
+    options: options || {},
+  })
+}
 
 /**
  * The generated NetlifyGraph library with your operations
  */
 const functions = {
   /**
-  * An example query to start with.
-  */
-  fetchExampleQuery: exports.fetchExampleQuery,
+   * An empty mutation to start from
+   */
+  executeCommit: executeCommit,
   /**
-  * Issue that allows querying GitHub for more information about issues.
-  */
-  fetchGetIssueBreakdown: exports.fetchGetIssueBreakdown
+   * An example query to start with.
+   */
+  fetchExampleQuery: fetchExampleQuery,
+  /**
+   * Issue that allows querying GitHub for more information about issues.
+   */
+  fetchGetIssueBreakdown: fetchGetIssueBreakdown,
 }
 
-exports.default = functions
+export default functions
 
-exports.handler = async (event, context) => {
+export const handler = () => {
   // return a 401 json response
   return {
     statusCode: 401,

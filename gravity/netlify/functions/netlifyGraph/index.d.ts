@@ -24,27 +24,7 @@ export type GraphQLError = {
 }
 
 export type CommitInput = {
-  /**
-   * The Ref to be updated.  Must be a branch.
-   */
-  branch?: {
-    /**
-     * The Node ID of the Ref to be updated.
-     */
-    id?: string
-    /**
-     * The nameWithOwner of the repository to commit to.
-     */
-    repositoryNameWithOwner?: string
-    /**
-     * The unqualified name of the branch to append the commit to.
-     */
-    branchName?: string
-  }
-  /**
-   * The git commit oid expected at the head of the branch prior to the commit
-   */
-  expectedHeadOid?: unknown
+  contents?: unknown
   /**
    * The commit message the be included with the commit.
    */
@@ -85,6 +65,27 @@ export type CommitInput = {
       contents: unknown
     }>
   }
+  /**
+   * The Ref to be updated.  Must be a branch.
+   */
+  branch?: {
+    /**
+     * The Node ID of the Ref to be updated.
+     */
+    id?: string
+    /**
+     * The nameWithOwner of the repository to commit to.
+     */
+    repositoryNameWithOwner?: string
+    /**
+     * The unqualified name of the branch to append the commit to.
+     */
+    branchName?: string
+  }
+  /**
+   * The git commit oid expected at the head of the branch prior to the commit
+   */
+  expectedHeadOid?: unknown
 }
 
 export type Commit = {
